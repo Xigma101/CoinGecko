@@ -7,9 +7,6 @@ use Tests\TestCase;
 
 class CryptocurrencyEndpointTest extends TestCase
 {
-    /**
-     * Sample market data used across multiple tests.
-     */
     private function fakeMarketData(): array
     {
         return [
@@ -48,11 +45,52 @@ class CryptocurrencyEndpointTest extends TestCase
             ->assertJsonPath('data.0.id', 'bitcoin');
     }
 
+    public function test_index_passes_currency_parameter(): void
+    {
+        Http::fake(['*/coins/markets*' => Http::response([])]);
+
+        $this->getJson('/api/cryptocurrencies?currency=eur');
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'vs_currency=eur');
+        });
+    }
+
     public function test_index_handles_api_failure(): void
     {
         Http::fake(['*/coins/markets*' => Http::response([], 500)]);
 
         $response = $this->getJson('/api/cryptocurrencies');
+
+        $response->assertStatus(500)
+            ->assertJson(['success' => false]);
+    }
+
+    // ----- GET /api/cryptocurrencies/trending -----
+
+    public function test_trending_returns_coins(): void
+    {
+        Http::fake([
+            '*/search/trending*' => Http::response([
+                'coins' => [
+                    ['item' => ['id' => 'pepe', 'name' => 'Pepe', 'symbol' => 'PEPE']],
+                ],
+                'nfts' => [],
+            ]),
+        ]);
+
+        $response = $this->getJson('/api/cryptocurrencies/trending');
+
+        $response->assertOk()
+            ->assertJson(['success' => true])
+            ->assertJsonCount(1, 'data');
+    }
+
+    public function test_trending_handles_api_failure(): void
+    {
+        Http::fake(['*/search/trending*' => Http::response([], 500)]);
+
+        $response = $this->getJson('/api/cryptocurrencies/trending');
 
         $response->assertStatus(500)
             ->assertJson(['success' => false]);
@@ -134,6 +172,77 @@ class CryptocurrencyEndpointTest extends TestCase
         Http::fake(['*/search*' => Http::response([], 500)]);
 
         $response = $this->getJson('/api/cryptocurrencies/search?q=bitcoin');
+
+        $response->assertStatus(500)
+            ->assertJson(['success' => false]);
+    }
+
+    // ----- GET /api/cryptocurrencies/{id}/market-chart -----
+
+    public function test_market_chart_returns_price_data(): void
+    {
+        Http::fake([
+            '*/coins/bitcoin/market_chart*' => Http::response([
+                'prices' => [[1700000000000, 69000], [1700003600000, 69500]],
+                'market_caps' => [[1700000000000, 1350000000000]],
+                'total_volumes' => [[1700000000000, 25000000000]],
+            ]),
+        ]);
+
+        $response = $this->getJson('/api/cryptocurrencies/bitcoin/market-chart');
+
+        $response->assertOk()
+            ->assertJson(['success' => true])
+            ->assertJsonCount(2, 'data.prices');
+    }
+
+    public function test_market_chart_accepts_currency_and_days(): void
+    {
+        Http::fake([
+            '*/coins/bitcoin/market_chart*' => Http::response([
+                'prices' => [],
+                'market_caps' => [],
+                'total_volumes' => [],
+            ]),
+        ]);
+
+        $response = $this->getJson('/api/cryptocurrencies/bitcoin/market-chart?currency=eur&days=30');
+
+        $response->assertOk();
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'vs_currency=eur')
+                && str_contains($request->url(), 'days=30');
+        });
+    }
+
+    public function test_market_chart_rejects_invalid_days(): void
+    {
+        $response = $this->getJson('/api/cryptocurrencies/bitcoin/market-chart?days=999');
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Days must be one of: 1, 7, 30, 90, 365.',
+            ]);
+    }
+
+    public function test_market_chart_rejects_invalid_currency(): void
+    {
+        $response = $this->getJson('/api/cryptocurrencies/bitcoin/market-chart?currency=xyz');
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Unsupported currency.',
+            ]);
+    }
+
+    public function test_market_chart_handles_api_failure(): void
+    {
+        Http::fake(['*/coins/bitcoin/market_chart*' => Http::response([], 500)]);
+
+        $response = $this->getJson('/api/cryptocurrencies/bitcoin/market-chart');
 
         $response->assertStatus(500)
             ->assertJson(['success' => false]);

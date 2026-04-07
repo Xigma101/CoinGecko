@@ -2,9 +2,11 @@
 
 namespace App\Domains\Crypto\Http\Controllers;
 
+use App\Domains\Crypto\Http\Requests\MarketChartRequest;
 use App\Domains\Crypto\Http\Requests\SearchCryptoRequest;
 use App\Domains\Crypto\Services\CoinGeckoService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Handles cryptocurrency API endpoints.
@@ -21,16 +23,36 @@ class CryptocurrencyController
     /**
      * Get the top 10 cryptocurrencies by market cap.
      *
-     * GET /api/cryptocurrencies
+     * GET /api/cryptocurrencies?currency=usd
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $coins = $this->coinGeckoService->getTopCoins();
+            $currency = $request->query('currency', 'usd');
+            $coins = $this->coinGeckoService->getTopCoins(10, $currency);
 
             return response()->json([
                 'success' => true,
                 'data' => $coins,
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e);
+        }
+    }
+
+    /**
+     * Get trending cryptocurrencies.
+     *
+     * GET /api/cryptocurrencies/trending
+     */
+    public function trending(): JsonResponse
+    {
+        try {
+            $trending = $this->coinGeckoService->getTrending();
+
+            return response()->json([
+                'success' => true,
+                'data' => $trending,
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse($e);
@@ -71,6 +93,28 @@ class CryptocurrencyController
             return response()->json([
                 'success' => true,
                 'data' => $results,
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e);
+        }
+    }
+
+    /**
+     * Get historical market chart data for a specific cryptocurrency.
+     *
+     * GET /api/cryptocurrencies/{id}/market-chart?currency=usd&days=7
+     */
+    public function marketChart(string $id, MarketChartRequest $request): JsonResponse
+    {
+        try {
+            $currency = $request->query('currency', 'usd');
+            $days = $request->query('days', '7');
+
+            $chartData = $this->coinGeckoService->getMarketChart($id, $currency, $days);
+
+            return response()->json([
+                'success' => true,
+                'data' => $chartData,
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse($e);

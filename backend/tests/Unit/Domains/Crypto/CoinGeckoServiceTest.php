@@ -16,6 +16,8 @@ class CoinGeckoServiceTest extends TestCase
         $this->service = new CoinGeckoService();
     }
 
+    // ----- getTopCoins -----
+
     public function test_get_top_coins_returns_array(): void
     {
         Http::fake([
@@ -47,6 +49,21 @@ class CoinGeckoServiceTest extends TestCase
         });
     }
 
+    public function test_get_top_coins_passes_currency_parameter(): void
+    {
+        Http::fake([
+            '*/coins/markets*' => Http::response([]),
+        ]);
+
+        $this->service->getTopCoins(10, 'eur');
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'vs_currency=eur');
+        });
+    }
+
+    // ----- getCoinDetail -----
+
     public function test_get_coin_detail_returns_coin_data(): void
     {
         Http::fake([
@@ -75,6 +92,8 @@ class CoinGeckoServiceTest extends TestCase
 
         $this->service->getCoinDetail('invalid-coin');
     }
+
+    // ----- searchCoins -----
 
     public function test_search_coins_returns_coins_array(): void
     {
@@ -107,6 +126,106 @@ class CoinGeckoServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
+
+    // ----- getTrending -----
+
+    public function test_get_trending_returns_coins_array(): void
+    {
+        Http::fake([
+            '*/search/trending*' => Http::response([
+                'coins' => [
+                    ['item' => ['id' => 'pepe', 'name' => 'Pepe', 'symbol' => 'PEPE']],
+                    ['item' => ['id' => 'bonk', 'name' => 'Bonk', 'symbol' => 'BONK']],
+                ],
+                'nfts' => [],
+            ]),
+        ]);
+
+        $result = $this->service->getTrending();
+
+        $this->assertIsArray($result);
+        $this->assertCount(2, $result);
+        $this->assertEquals('pepe', $result[0]['item']['id']);
+    }
+
+    public function test_get_trending_returns_empty_when_no_coins_key(): void
+    {
+        Http::fake([
+            '*/search/trending*' => Http::response(['nfts' => []]),
+        ]);
+
+        $result = $this->service->getTrending();
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    // ----- getMarketChart -----
+
+    public function test_get_market_chart_returns_price_data(): void
+    {
+        Http::fake([
+            '*/coins/bitcoin/market_chart*' => Http::response([
+                'prices' => [[1700000000000, 69000], [1700003600000, 69500]],
+                'market_caps' => [[1700000000000, 1350000000000]],
+                'total_volumes' => [[1700000000000, 25000000000]],
+            ]),
+        ]);
+
+        $result = $this->service->getMarketChart('bitcoin');
+
+        $this->assertArrayHasKey('prices', $result);
+        $this->assertCount(2, $result['prices']);
+    }
+
+    public function test_get_market_chart_passes_currency_and_days(): void
+    {
+        Http::fake([
+            '*/coins/bitcoin/market_chart*' => Http::response([
+                'prices' => [],
+                'market_caps' => [],
+                'total_volumes' => [],
+            ]),
+        ]);
+
+        $this->service->getMarketChart('bitcoin', 'eur', '30');
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'vs_currency=eur')
+                && str_contains($request->url(), 'days=30');
+        });
+    }
+
+    public function test_get_market_chart_uses_full_precision(): void
+    {
+        Http::fake([
+            '*/coins/bitcoin/market_chart*' => Http::response([
+                'prices' => [],
+                'market_caps' => [],
+                'total_volumes' => [],
+            ]),
+        ]);
+
+        $this->service->getMarketChart('bitcoin');
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'precision=full');
+        });
+    }
+
+    public function test_get_market_chart_throws_on_not_found(): void
+    {
+        Http::fake([
+            '*/coins/invalid-coin/market_chart*' => Http::response([], 404),
+        ]);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionCode(404);
+
+        $this->service->getMarketChart('invalid-coin');
+    }
+
+    // ----- Error handling -----
 
     public function test_throws_on_rate_limit(): void
     {

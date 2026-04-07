@@ -16,5 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('cryptocurrencies')->middleware('throttle:100,1')->group(function () {
     Route::get('/', [CryptocurrencyController::class, 'index']);
     Route::get('/search', [CryptocurrencyController::class, 'search']);
+    Route::get('/trending', [CryptocurrencyController::class, 'trending']);
+    Route::get('/{id}/market-chart', [CryptocurrencyController::class, 'marketChart']);
     Route::get('/{id}', [CryptocurrencyController::class, 'show']);
 });

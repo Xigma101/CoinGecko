@@ -59,7 +59,7 @@ class CoinGeckoService
     {
         $response = $this->request("/coins/{$id}", [
             'localization' => 'false',
-            'tickers' => 'false',
+            'tickers' => 'true',
             'community_data' => 'false',
             'developer_data' => 'false',
         ]);
@@ -83,6 +83,39 @@ class CoinGeckoService
 
         // The /search endpoint returns multiple categories; we only need coins
         return $response['coins'] ?? [];
+    }
+
+    /**
+     * Fetch trending coins, NFTs, and categories from CoinGecko.
+     *
+     * @return array Trending coins list
+     *
+     * @throws \Exception
+     */
+    public function getTrending(): array
+    {
+        $response = $this->request('/search/trending');
+
+        return $response['coins'] ?? [];
+    }
+
+    /**
+     * Fetch historical market chart data for a specific cryptocurrency.
+     *
+     * @param string $id       The CoinGecko coin ID (e.g. 'bitcoin')
+     * @param string $currency Target currency (e.g. 'usd')
+     * @param string $days     Number of days of data (e.g. '1', '7', '30', '90', '365')
+     * @return array
+     *
+     * @throws \Exception
+     */
+    public function getMarketChart(string $id, string $currency = 'usd', string $days = '7'): array
+    {
+        return $this->request("/coins/{$id}/market_chart", [
+            'vs_currency' => $currency,
+            'days' => $days,
+            'precision' => 'full',
+        ]);
     }
 
     /**
