@@ -4,5 +4,33 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   future: {
     compatibilityVersion: 4
-  }
+  },
+
+  modules: ['@nuxtjs/tailwindcss', 'nuxt-charts'],
+
+  components: [
+    { path: '~/components/ui', pathPrefix: false },
+    { path: '~/components/crypto', pathPrefix: false },
+  ],
+
+  css: ['~/assets/css/main.css'],
+
+  vite: {
+    server: {
+      watch: {
+        usePolling: true,
+        interval: 1000,
+      },
+    },
+  },
+
+  runtimeConfig: {
+    // Server-side only — used by Nuxt server routes / SSR
+    apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000',
+
+    public: {
+      // Client-side — used by browser fetch calls
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8000',
+    },
+  },
 })
