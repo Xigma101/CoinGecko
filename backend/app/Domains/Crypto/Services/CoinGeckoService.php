@@ -2,6 +2,7 @@
 
 namespace App\Domains\Crypto\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\ConnectionException;
@@ -11,12 +12,22 @@ use Illuminate\Http\Client\ConnectionException;
  *
  * Acts as a proxy layer so the API key remains server-side
  * and is never exposed to the frontend client.
+ *
+ * All responses are cached via Redis to reduce API calls
+ * and improve response times for end users.
  */
 class CoinGeckoService
 {
     private string $baseUrl;
     private string $apiKey;
     private int $timeout;
+
+    /** Cache TTLs in seconds */
+    private const CACHE_TTL_MARKETS  = 60;   // Top coins: 1 minute (price-sensitive)
+    private const CACHE_TTL_DETAIL   = 60;   // Coin detail: 1 minute
+    private const CACHE_TTL_SEARCH   = 300;  // Search: 5 minutes (stable data)
+    private const CACHE_TTL_TRENDING = 300;  // Trending: 5 minutes
+    private const CACHE_TTL_CHART    = 300;  // Chart: 5 minutes (historical)
 
     public function __construct()
     {
@@ -36,15 +47,17 @@ class CoinGeckoService
      */
     public function getTopCoins(int $perPage = 10, string $currency = 'usd'): array
     {
-        $response = $this->request('/coins/markets', [
-            'vs_currency' => $currency,
-            'order' => 'market_cap_desc',
-            'per_page' => $perPage,
-            'page' => 1,
-            'sparkline' => false,
-        ]);
+        $cacheKey = "coingecko:markets:{$currency}:{$perPage}";
 
-        return $response;
+        return Cache::remember($cacheKey, self::CACHE_TTL_MARKETS, function () use ($perPage, $currency) {
+            return $this->request('/coins/markets', [
+                'vs_currency' => $currency,
+                'order' => 'market_cap_desc',
+                'per_page' => $perPage,
+                'page' => 1,
+                'sparkline' => false,
+            ]);
+        });
     }
 
     /**
@@ -57,14 +70,16 @@ class CoinGeckoService
      */
     public function getCoinDetail(string $id): array
     {
-        $response = $this->request("/coins/{$id}", [
-            'localization' => 'false',
-            'tickers' => 'true',
-            'community_data' => 'false',
-            'developer_data' => 'false',
-        ]);
+        $cacheKey = "coingecko:detail:{$id}";
 
-        return $response;
+        return Cache::remember($cacheKey, self::CACHE_TTL_DETAIL, function () use ($id) {
+            return $this->request("/coins/{$id}", [
+                'localization' => 'false',
+                'tickers' => 'true',
+                'community_data' => 'false',
+                'developer_data' => 'false',
+            ]);
+        });
     }
 
     /**
@@ -77,12 +92,15 @@ class CoinGeckoService
      */
     public function searchCoins(string $query): array
     {
-        $response = $this->request('/search', [
-            'query' => $query,
-        ]);
+        $cacheKey = "coingecko:search:" . strtolower($query);
 
-        // The /search endpoint returns multiple categories; we only need coins
-        return $response['coins'] ?? [];
+        return Cache::remember($cacheKey, self::CACHE_TTL_SEARCH, function () use ($query) {
+            $response = $this->request('/search', [
+                'query' => $query,
+            ]);
+
+            return $response['coins'] ?? [];
+        });
     }
 
     /**
@@ -94,9 +112,11 @@ class CoinGeckoService
      */
     public function getTrending(): array
     {
-        $response = $this->request('/search/trending');
+        return Cache::remember('coingecko:trending', self::CACHE_TTL_TRENDING, function () {
+            $response = $this->request('/search/trending');
 
-        return $response['coins'] ?? [];
+            return $response['coins'] ?? [];
+        });
     }
 
     /**
@@ -111,11 +131,15 @@ class CoinGeckoService
      */
     public function getMarketChart(string $id, string $currency = 'usd', string $days = '7'): array
     {
-        return $this->request("/coins/{$id}/market_chart", [
-            'vs_currency' => $currency,
-            'days' => $days,
-            'precision' => 'full',
-        ]);
+        $cacheKey = "coingecko:chart:{$id}:{$currency}:{$days}";
+
+        return Cache::remember($cacheKey, self::CACHE_TTL_CHART, function () use ($id, $currency, $days) {
+            return $this->request("/coins/{$id}/market_chart", [
+                'vs_currency' => $currency,
+                'days' => $days,
+                'precision' => 'full',
+            ]);
+        });
     }
 
     /**
