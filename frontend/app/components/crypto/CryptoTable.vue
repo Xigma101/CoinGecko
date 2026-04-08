@@ -56,7 +56,7 @@
               <td class="px-6 py-4 text-muted">{{ coin.market_cap_rank }}</td>
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <img :src="coin.image" :alt="coin.name" class="w-8 h-8 rounded-full" />
+                  <NuxtImg :src="coin.image" :alt="coin.name" width="32" height="32" class="w-8 h-8 rounded-full" />
                   <div>
                     <span class="font-medium text-white">{{ coin.name }}</span>
                     <span class="ml-2 text-xs text-muted uppercase">{{ coin.symbol }}</span>
@@ -110,7 +110,7 @@
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <img :src="coin.image" :alt="coin.name" class="w-10 h-10 rounded-full" />
+            <NuxtImg :src="coin.image" :alt="coin.name" width="40" height="40" class="w-10 h-10 rounded-full" />
             <div>
               <div class="font-medium text-white">{{ coin.name }}</div>
               <div class="text-xs text-muted uppercase">{{ coin.symbol }} · #{{ coin.market_cap_rank }}</div>

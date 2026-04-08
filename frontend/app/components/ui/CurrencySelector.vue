@@ -33,17 +33,10 @@ const { currency, currentCurrency, CURRENCIES } = useCurrency()
 const open = ref(false)
 const wrapper = ref(null)
 
+onClickOutside(wrapper, () => { open.value = false })
+
 function select(code) {
   currency.value = code
   open.value = false
 }
-
-function onClickOutside(e) {
-  if (wrapper.value && !wrapper.value.contains(e.target)) {
-    open.value = false
-  }
-}
-
-onMounted(() => document.addEventListener('click', onClickOutside))
-onUnmounted(() => document.removeEventListener('click', onClickOutside))
 </script>
