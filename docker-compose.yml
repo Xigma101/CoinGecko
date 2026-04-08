@@ -9,7 +9,7 @@ services:
       - ./backend:/var/www/html
       - backend_vendor:/var/www/html/vendor
     env_file:
-      - ./backend/.env
+      - ./backend/.env.example
     depends_on:
       - redis
     networks:
