@@ -6,7 +6,7 @@
     </div>
 
     <!-- Always reserve height with a fixed container -->
-    <div class="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pt-0 pb-4 mt-2">
+    <div class="flex gap-3 overflow-x-auto -mx-1 px-1 pt-0 pb-4 mt-2">
       <!-- Skeleton cards while loading -->
       <template v-if="status === 'pending' || (!coins.length && !error)">
         <div v-for="i in 5" :key="i" class="flex-shrink-0 w-52 bg-dark-light rounded-lg border border-dark-border p-4">
