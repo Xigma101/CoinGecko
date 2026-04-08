@@ -31,25 +31,25 @@
   - `COINGECKO_API_KEY=your_key_here`
   - `COINGECKO_BASE_URL=https://api.coingecko.com/api/v3`
 - [x] Ensure `.env` is in `.gitignore`
-- [ ] API key is only used server-side (never exposed to frontend)
+- [x] API key is only used server-side (never exposed to frontend)
 
 ## Networking
 
 - [x] Backend exposed on `localhost:8000`
 - [x] Frontend exposed on `localhost:3000`
-- [ ] Frontend proxy config: API calls to `/api/*` route to backend container
-- [ ] CORS configured on Laravel to accept requests from frontend origin
+- [x] Frontend proxy config: API calls to `/api/*` route to backend container
+- [x] CORS configured on Laravel to accept requests from frontend origin
 
 ## Setup Instructions (for README)
 
-- [ ] Clone repo
-- [ ] Copy `.env.example` to `.env` and add CoinGecko API key
-- [ ] Run `docker-compose up`
-- [ ] Visit `http://localhost:3000`
+- [x] Clone repo
+- [x] Copy `.env.example` to `.env` and add CoinGecko API key
+- [x] Run `docker-compose up`
+- [x] Visit `http://localhost:3000`
 
 ## Verification
 
 - [x] `docker-compose up` builds and starts both services without errors
 - [x] Frontend loads at `localhost:3000` (HTTP 200)
-- [ ] Frontend can reach backend API at `localhost:8000/api/...`
-- [ ] Restart (`docker-compose down && docker-compose up`) works cleanly
+- [x] Frontend can reach backend API at `localhost:8000/api/...`
+- [x] Restart (`docker-compose down && docker-compose up`) works cleanly

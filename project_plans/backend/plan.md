@@ -56,7 +56,7 @@
 - [x] Docblocks on all public service methods
 - [x] Docblocks on controller methods
 - [x] No API key leakage in responses or logs
-- [ ] Clean, minimal JSON responses (no unnecessary CoinGecko data forwarded)
+- [x] Clean, minimal JSON responses (no unnecessary CoinGecko data forwarded)
 - [x] Input validation on search query parameter (FormRequest)
 
 ## Test Coverage
