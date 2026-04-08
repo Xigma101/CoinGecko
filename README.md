@@ -57,23 +57,17 @@ The frontend never talks to Laravel directly. All API calls go through Nuxt serv
    cd CoinGecko
    ```
 
-2. **Set up the environment file**
-
-   ```bash
-   cp backend/.env.example backend/.env
-   ```
-
-   > **Note:** For this submission, a working CoinGecko demo API key is included in `.env.example` so the project runs immediately. In production, secrets would be injected via a secrets manager (e.g. AWS Secrets Manager) or CI/CD pipeline variables.
-
-3. **Start the application**
+2. **Start the application**
 
    ```bash
    docker compose up
    ```
 
-   First run takes a few minutes to pull images and install dependencies.
+   First run takes a few minutes to pull images and install dependencies. The `.env` file is automatically created from `.env.example` on first boot.
 
-4. **Open in your browser**
+   > **Note:** For this submission, a working CoinGecko demo API key is included so the project runs immediately. In production, secrets would be injected via a secrets manager (e.g. AWS Secrets Manager) or CI/CD pipeline variables.
+
+3. **Open in your browser**
 
    - **Frontend:** [http://localhost:3000](http://localhost:3000)
    - **Backend API:** [http://localhost:8000](http://localhost:8000)

@@ -32,5 +32,6 @@ RUN composer dump-autoload --optimize
 EXPOSE 8000
 
 # Use entrypoint script to handle setup on container start
-CMD php artisan key:generate --force --no-interaction 2>/dev/null; \
+CMD cp -n .env.example .env 2>/dev/null; \
+    php artisan key:generate --force --no-interaction 2>/dev/null; \
     php artisan serve --host=0.0.0.0 --port=8000
