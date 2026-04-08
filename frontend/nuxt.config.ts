@@ -6,7 +6,7 @@ export default defineNuxtConfig({
     compatibilityVersion: 4
   },
 
-  modules: ['@nuxtjs/tailwindcss', 'nuxt-charts'],
+  modules: ['@nuxtjs/tailwindcss', 'nuxt-charts', '@nuxt/image', '@vueuse/nuxt'],
 
   components: [
     { path: '~/components/ui', pathPrefix: false },
@@ -25,12 +25,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // Server-side only — used by Nuxt server routes / SSR
+    // Server-side only — used by Nuxt server routes to proxy to Laravel
     apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000',
-
-    public: {
-      // Client-side — used by browser fetch calls
-      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8000',
-    },
   },
 })

@@ -56,7 +56,7 @@
             class="flex items-center gap-3 px-4 py-3 hover:bg-dark-lighter transition-colors"
             @click="close"
           >
-            <img :src="coin.thumb" :alt="coin.name" class="w-6 h-6 rounded-full" />
+            <NuxtImg :src="coin.thumb" :alt="coin.name" width="24" height="24" class="w-6 h-6 rounded-full" />
             <div>
               <span class="text-sm font-medium text-white">{{ coin.name }}</span>
               <span class="ml-2 text-xs text-muted uppercase">{{ coin.symbol }}</span>
@@ -77,20 +77,17 @@ const results = ref([])
 const trendingCache = ref([])
 const showResults = ref(false)
 const searching = ref(false)
-const focused = ref(false)
-
-defineExpose({ focused })
 const wrapper = ref(null)
 let debounceTimer
 
-const config = useRuntimeConfig()
-const baseUrl = import.meta.server ? config.apiBaseUrl : config.public.apiBaseUrl
+// Close dropdown on outside click (VueUse)
+onClickOutside(wrapper, () => close())
 
 // Preload trending coins for the default dropdown
 async function loadTrending() {
   if (trendingCache.value.length) return
   try {
-    const response = await $fetch(`${baseUrl}/api/cryptocurrencies/trending`)
+    const response = await $fetch('/api/cryptocurrencies/trending')
     if (response.success) {
       trendingCache.value = response.data.slice(0, 6).map((c) => ({
         id: c.item.id,
@@ -105,16 +102,13 @@ async function loadTrending() {
   }
 }
 
-// Show trending on focus when input is empty
 function onFocus() {
-  focused.value = true
   loadTrending()
   if (query.value.length < 2) {
     showResults.value = true
   }
 }
 
-// Results to display: search results if searching, trending as fallback
 const displayResults = computed(() => {
   if (query.value.length >= 2 && results.value.length) return results.value
   if (query.value.length < 2) return trendingCache.value
@@ -135,10 +129,9 @@ function onInput() {
 
   debounceTimer = setTimeout(async () => {
     try {
-      const response = await $fetch(
-        `${baseUrl}/api/cryptocurrencies/search`,
-        { params: { q: query.value } }
-      )
+      const response = await $fetch('/api/cryptocurrencies/search', {
+        params: { q: query.value },
+      })
       if (response.success) {
         results.value = response.data.slice(0, 8)
         showResults.value = true
@@ -156,15 +149,5 @@ function close() {
   query.value = ''
   results.value = []
   searching.value = false
-  focused.value = false
 }
-
-function onClickOutside(e) {
-  if (wrapper.value && !wrapper.value.contains(e.target)) {
-    close()
-  }
-}
-
-onMounted(() => document.addEventListener('click', onClickOutside))
-onUnmounted(() => document.removeEventListener('click', onClickOutside))
 </script>
