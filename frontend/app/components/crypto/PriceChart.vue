@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-dark-light rounded-lg border border-dark-border p-4 sm:p-6">
+  <Card>
     <!-- Header with title and time period buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
       <h2 class="text-lg font-semibold text-white">Price History</h2>
@@ -21,13 +21,12 @@
     </div>
 
     <!-- Loading state -->
-    <div v-if="status === 'pending'" class="flex justify-center py-12">
-      <LoadingSpinner />
-    </div>
+    <!-- Loading skeleton matching chart dimensions -->
+    <div v-if="status === 'pending'" class="h-[200px] sm:h-[300px] bg-dark-border/20 rounded animate-pulse" />
 
-    <!-- Error / unavailable state -->
-    <div v-else-if="error || (status !== 'pending' && !chartData.length)" class="text-center py-8">
-      <p class="text-sm text-muted">Chart data unavailable</p>
+    <!-- Error / unavailable -->
+    <div v-else-if="error || (status !== 'pending' && !chartData.length)" class="py-4">
+      <ErrorMessage message="Chart data unavailable" inline @retry="refresh" />
     </div>
 
     <!-- Chart -->
@@ -45,7 +44,7 @@
         :line-width="2"
       />
     </div>
-  </div>
+  </Card>
 </template>
 
 <script setup>
@@ -56,20 +55,9 @@ const props = defineProps({
 const { currency, currentCurrency } = useCurrency()
 const { getMarketChart } = useApi()
 
-// Responsive breakpoint
-const isMobile = ref(false)
-
-function checkMobile() {
-  isMobile.value = window.innerWidth < 640
-}
-
-onMounted(() => {
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-})
-onUnmounted(() => {
-  window.removeEventListener('resize', checkMobile)
-})
+// Responsive breakpoint (VueUse — SSR-safe, auto-cleanup)
+const { width } = useWindowSize()
+const isMobile = computed(() => width.value < 640)
 
 const periods = [
   { label: '24H', days: '1' },

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-dark-light rounded-lg border border-dark-border p-4 sm:p-6">
+  <Card>
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-semibold text-white">Markets</h2>
       <span v-if="lastUpdated" class="text-xs text-muted">
@@ -7,8 +7,8 @@
       </span>
     </div>
 
-    <div v-if="!tickers?.length" class="text-center py-6">
-      <p class="text-sm text-muted">No market data available</p>
+    <div v-if="!tickers?.length" class="py-2">
+      <ErrorMessage message="No market data available" inline @retry="() => {}" />
     </div>
 
     <div v-else class="overflow-x-auto">
@@ -55,7 +55,7 @@
         Show all {{ tickers.length }} markets
       </button>
     </div>
-  </div>
+  </Card>
 </template>
 
 <script setup>
