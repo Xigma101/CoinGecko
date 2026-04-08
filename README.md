@@ -89,36 +89,48 @@ The frontend never talks to Laravel directly. All API calls go through Nuxt serv
 
 ## Project Structure
 
+### Backend (Laravel — DDD)
+
+The backend follows a Domain-Driven Design pattern. All crypto-related code lives under `app/Domains/Crypto/`, keeping it isolated from framework boilerplate. To add a new domain (e.g. user portfolios), you'd create `app/Domains/Portfolio/` with the same `Http/Controllers`, `Http/Requests`, `Services` structure. No database is needed — `CoinGeckoService` acts as a cached HTTP client, registered as a singleton via `AppServiceProvider`. All user input is validated through dedicated `FormRequest` classes before reaching the controller.
+
 ```
-CoinGecko/
-├── backend/                              # Laravel API
-│   ├── app/
-│   │   ├── Domains/Crypto/               # DDD domain layer
-│   │   │   ├── Http/
-│   │   │   │   ├── Controllers/          # CryptocurrencyController
-│   │   │   │   └── Requests/             # FormRequest validation
-│   │   │   └── Services/                 # CoinGeckoService (cached API client)
-│   │   └── Providers/
-│   ├── config/coingecko.php
-│   ├── routes/api.php
-│   └── tests/                            # 31 unit + feature tests
-│
-├── frontend/                             # Nuxt 3 app
-│   ├── app/
-│   │   ├── components/
-│   │   │   ├── crypto/                   # Domain: CryptoDetail, CryptoTable,
-│   │   │   │                             #   PriceChart, TrendingCoins, TradingTickers
-│   │   │   └── ui/                       # Reusable: Card, StatItem, SearchBar,
-│   │   │                                 #   CurrencySelector, ErrorMessage, SortIcon
-│   │   ├── composables/                  # useApi, useCurrency, useFormatters
-│   │   ├── layouts/                      # Default layout (header, search, footer)
-│   │   └── pages/                        # index, crypto/[id]
-│   ├── server/
-│   │   └── api/cryptocurrencies/         # SSR proxy routes to Laravel
-│   └── tests/                            # 33 composable + component tests
-│
-├── docker-compose.yml                    # 3 services: backend, frontend, redis
-└── README.md
+backend/
+├── app/
+│   ├── Domains/Crypto/
+│   │   ├── Http/
+│   │   │   ├── Controllers/              # CryptocurrencyController
+│   │   │   └── Requests/                 # SearchCryptoRequest, MarketChartRequest
+│   │   └── Services/                     # CoinGeckoService (cached via Redis)
+│   └── Providers/                        # AppServiceProvider (singleton bindings)
+├── config/coingecko.php                  # API key, base URL, timeout
+├── routes/api.php                        # 5 endpoints, throttle middleware
+└── tests/                                # 31 unit + feature tests
+```
+
+### Frontend (Nuxt 3)
+
+Components are split into two directories: `ui/` contains generic, reusable pieces (`Card`, `StatItem`, `ErrorMessage`) that have no knowledge of crypto data and can be used anywhere. `crypto/` contains domain-specific components (`CryptoTable`, `PriceChart`) that depend on the API data shape. This separation means `Card` is defined once and used by the detail page, chart, and tickers — not duplicated across views.
+
+Composables follow the same pattern: `useApi` handles data fetching via server routes, `useCurrency` manages shared currency state across all components using Nuxt's `useState` (SSR-safe), and `useFormatters` centralises all number/currency display logic so formatting rules are consistent everywhere.
+
+Server routes under `server/api/` act as the SSR proxy layer. They forward requests to the Laravel backend and return clean error messages, keeping the backend URL out of client bundles entirely.
+
+Pages use Nuxt's file-based routing — `pages/index.vue` is the homepage, `pages/crypto/[id].vue` handles dynamic coin detail routes.
+
+```
+frontend/
+├── app/
+│   ├── components/
+│   │   ├── crypto/                       # CryptoDetail, CryptoTable, PriceChart,
+│   │   │                                 #   TrendingCoins, TradingTickers
+│   │   └── ui/                           # Card, StatItem, SearchBar, CurrencySelector,
+│   │                                     #   ErrorMessage, LoadingSpinner, SortIcon
+│   ├── composables/                      # useApi, useCurrency, useFormatters
+│   ├── layouts/                          # Default layout (header, search, footer)
+│   └── pages/                            # index, crypto/[id]
+├── server/
+│   └── api/cryptocurrencies/             # SSR proxy routes to Laravel
+└── tests/                                # 33 composable + component tests
 ```
 
 ## API Flow
@@ -168,6 +180,18 @@ docker compose exec frontend npm test
 ```
 
 Backend tests cover all service methods, API endpoints, validation rules, and error handling. Frontend tests cover composable logic (formatters, currency state) and UI component rendering.
+
+## Future Improvements
+
+Given more time, the following areas would strengthen the application:
+
+- **WebSocket integration** — Replace 60-second polling with real-time price updates for a truly live dashboard
+- **User authentication** — Allow users to create accounts with personal watchlists and favourite coins
+- **Price alerts** — Notify users when a coin hits a target price via email or push notifications
+- **E2E testing** — Add Playwright tests covering full user flows (search, navigate, change currency)
+- **Production builds** — Multi-stage Dockerfiles with Nginx for optimised static serving and proper health checks
+- **CI/CD pipeline** — Automated testing, linting, and deployment on push via GitHub Actions
+- **Pagination** — Extend the homepage beyond top 10 with infinite scroll or paginated results
 
 ## Stopping the Application
 
